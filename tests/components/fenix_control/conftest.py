@@ -3,11 +3,11 @@
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from pyfenixcontrol import Device, Installation, PresetMode, Room
+from pyfenixcontrol import Device, EnergyMetric, Installation, PresetMode, Room
 import pytest
 
 from homeassistant.components.fenix_control.const import DOMAIN
-from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, Platform
 from homeassistant.core import HomeAssistant
 
 from tests.common import MockConfigEntry
@@ -41,6 +41,12 @@ DEVICE = Device(
     active_holiday_mode=0,
     raw={},
 )
+
+# Today's hourly energy buckets of the room in Wh
+ENERGY = [
+    EnergyMetric(start=None, value=120.0, processed_value=120.0, raw={}),
+    EnergyMetric(start=None, value=80.5, processed_value=80.5, raw={}),
+]
 
 
 @pytest.fixture
@@ -83,7 +89,14 @@ def mock_fenix_client() -> Generator[MagicMock]:
         client.get_user_id.return_value = USER_ID
         client.get_installations.return_value = [INSTALLATION]
         client.get_devices.return_value = [DEVICE]
+        client.get_room_energy.return_value = ENERGY
         yield client
+
+
+@pytest.fixture
+def platforms() -> list[Platform]:
+    """Fixture to specify platforms to test."""
+    return [Platform.CLIMATE, Platform.SENSOR]
 
 
 @pytest.fixture
@@ -91,9 +104,11 @@ async def init_integration(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_fenix_client: MagicMock,
+    platforms: list[Platform],
 ) -> MockConfigEntry:
     """Set up the FENIX Control integration for testing."""
     mock_config_entry.add_to_hass(hass)
-    await hass.config_entries.async_setup(mock_config_entry.entry_id)
-    await hass.async_block_till_done()
+    with patch("homeassistant.components.fenix_control._PLATFORMS", platforms):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
     return mock_config_entry
