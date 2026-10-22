@@ -1,7 +1,7 @@
 """Data update coordinator for the FENIX Control integration."""
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 from typing import override
 
@@ -77,8 +77,22 @@ class FenixControlCoordinator(DataUpdateCoordinator[FenixControlData]):
                 translation_domain=DOMAIN, translation_key="update_failed"
             ) from err
 
+        # Some thermostats stop reporting their own name; the room keeps it
+        room_names = {
+            (installation.id, room.id): room.name
+            for installation in installations
+            for room in installation.rooms
+        }
         return FenixControlData(
-            devices={device.id: device for device in devices},
+            devices={
+                device.id: device
+                if device.name
+                else replace(
+                    device,
+                    name=room_names.get((device.installation_id, device.room_id)),
+                )
+                for device in devices
+            },
             daily_energy=daily_energy,
         )
 
