@@ -3,7 +3,7 @@
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from pyfenixcontrol import Device, Installation, PresetMode, Room
+from pyfenixcontrol import Device, EnergyMetric, Installation, PresetMode, Room
 import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -40,6 +40,12 @@ DEVICE = Device(
     active_holiday_mode=0,
     raw={},
 )
+
+# Today's hourly energy buckets of the room in Wh
+ENERGY = [
+    EnergyMetric(start=None, value=120.0, processed_value=120.0, raw={}),
+    EnergyMetric(start=None, value=80.5, processed_value=80.5, raw={}),
+]
 
 
 @pytest.fixture
@@ -82,13 +88,14 @@ def mock_fenix_client() -> Generator[MagicMock]:
         client.get_user_id.return_value = USER_ID
         client.get_installations.return_value = [INSTALLATION]
         client.get_devices.return_value = [DEVICE]
+        client.get_room_energy.return_value = ENERGY
         yield client
 
 
 @pytest.fixture
 def platforms() -> list[Platform]:
     """Fixture to specify platforms to test."""
-    return [Platform.CLIMATE]
+    return [Platform.CLIMATE, Platform.SENSOR]
 
 
 @pytest.fixture
