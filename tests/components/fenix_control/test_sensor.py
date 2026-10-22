@@ -9,6 +9,7 @@ from pyfenixcontrol import (
     FenixControlResponseError,
 )
 import pytest
+from pytest_homeassistant.common import MockConfigEntry, snapshot_platform
 from syrupy.assertion import SnapshotAssertion
 
 from homeassistant.components.fenix_control.const import DOMAIN
@@ -18,8 +19,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from .conftest import DEVICE, INSTALLATION, INSTALLATION_ID, ROOM, ROOM_ID
-
-from tests.common import MockConfigEntry, snapshot_platform
 
 ENERGY_ENTITY_ID = "sensor.home_living_room_energy_consumption_today"
 
