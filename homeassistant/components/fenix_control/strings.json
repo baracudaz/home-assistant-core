@@ -38,9 +38,6 @@
       "daily_energy_consumption": {
         "name": "Energy consumption today"
       },
-      "floor_temperature": {
-        "name": "Floor temperature"
-      },
       "room_temperature": {
         "name": "Room temperature"
       }

@@ -54,16 +54,6 @@ SENSORS: tuple[FenixControlSensorEntityDescription, ...] = (
         value_fn=lambda device, _: device.room_temperature,
         exists_fn=lambda device: device.room_temperature is not None,
     ),
-    FenixControlSensorEntityDescription(
-        key="floor_temperature",
-        translation_key="floor_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        entity_registry_enabled_default=False,
-        value_fn=lambda device, _: device.floor_temperature,
-        exists_fn=lambda device: device.floor_temperature is not None,
-    ),
 )
 
 

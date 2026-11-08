@@ -127,15 +127,15 @@ async def test_daily_energy_auth_error(
 
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
-async def test_temperature_sensors_not_reported(
+async def test_room_temperature_not_reported(
     hass: HomeAssistant,
     entity_registry: er.EntityRegistry,
     mock_config_entry: MockConfigEntry,
     mock_fenix_client: MagicMock,
 ) -> None:
-    """Test temperature sensors are only created for reported temperatures."""
+    """Test the room temperature sensor is only created when it is reported."""
     mock_fenix_client.get_devices.return_value = [
-        dataclasses.replace(DEVICE, room_temperature=None, floor_temperature=None)
+        dataclasses.replace(DEVICE, room_temperature=None)
     ]
     mock_config_entry.add_to_hass(hass)
 
