@@ -34,6 +34,19 @@
     }
   },
   "entity": {
+    "climate": {
+      "thermostat": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "away": "Defrost",
+              "boost": "[%key:component::climate::entity_component::_::state_attributes::preset_mode::state::boost%]",
+              "home": "Program"
+            }
+          }
+        }
+      }
+    },
     "sensor": {
       "daily_energy_consumption": {
         "name": "Energy consumption today"
