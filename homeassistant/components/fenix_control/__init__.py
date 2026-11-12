@@ -8,7 +8,7 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .coordinator import FenixControlConfigEntry, FenixControlCoordinator
 
-_PLATFORMS: list[Platform] = [Platform.CLIMATE]
+_PLATFORMS: list[Platform] = [Platform.CLIMATE, Platform.SENSOR]
 
 
 async def async_setup_entry(

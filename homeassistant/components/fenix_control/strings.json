@@ -46,6 +46,14 @@
           }
         }
       }
+    },
+    "sensor": {
+      "daily_energy_consumption": {
+        "name": "Energy consumption today"
+      },
+      "room_temperature": {
+        "name": "Room temperature"
+      }
     }
   },
   "exceptions": {
