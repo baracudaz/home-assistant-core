@@ -2,6 +2,7 @@
 
 import array
 import asyncio
+from collections.abc import Callable
 from datetime import datetime, timedelta
 import functools
 import gc
@@ -22,7 +23,6 @@ from pytest_unordered import unordered
 
 from homeassistant import core as ha
 from homeassistant.const import (
-    ATTR_FRIENDLY_NAME,
     EVENT_CALL_SERVICE,
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_CLOSE,
@@ -36,6 +36,7 @@ from homeassistant.const import (
     EVENT_STATE_REPORTED,
     MATCH_ALL,
     STATE_UNKNOWN,
+    EntityStateAttribute,
 )
 from homeassistant.core import (
     CoreState,
@@ -1602,7 +1603,9 @@ def test_state_name_if_no_friendly_name_attr() -> None:
 def test_state_name_if_friendly_name_attr() -> None:
     """Test if there is a friendly name."""
     name = "Some Unique Name"
-    state = ha.State("domain.hello_world", "world", {ATTR_FRIENDLY_NAME: name})
+    state = ha.State(
+        "domain.hello_world", "world", {EntityStateAttribute.FRIENDLY_NAME: name}
+    )
     assert state.name == name
 
 
@@ -3631,6 +3634,79 @@ async def test_thread_safety_message(hass: HomeAssistant) -> None:
         ),
     ):
         await hass.async_add_executor_job(hass.verify_event_loop_thread, "test")
+
+
+@ha.verify_event_loop_thread("test.function")
+def _decorated_function(hass: HomeAssistant, value: int, *, extra: int) -> int:
+    """Return the sum of the arguments."""
+    return value + extra
+
+
+class _DecoratedMethodOwner:
+    """Hold a reference to hass and a decorated method."""
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize."""
+        self.hass = hass
+
+    @ha.verify_event_loop_thread("test.method")
+    def decorated(self, value: int, *, extra: int) -> int:
+        """Return the sum of the arguments."""
+        return value + extra
+
+
+class _DecoratedMethodPrivateOwner:
+    """Hold a private reference to hass and a decorated method."""
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize."""
+        self._hass = hass
+
+    @ha.verify_event_loop_thread("test.private_method")
+    def decorated(self, value: int, *, extra: int) -> int:
+        """Return the sum of the arguments."""
+        return value + extra
+
+
+@pytest.mark.parametrize(
+    ("get_target", "what"),
+    [
+        pytest.param(
+            lambda hass: functools.partial(_decorated_function, hass),
+            "test.function",
+            id="hass_argument",
+        ),
+        pytest.param(
+            lambda hass: functools.partial(_decorated_function, hass=hass),
+            "test.function",
+            id="hass_keyword_argument",
+        ),
+        pytest.param(
+            lambda hass: _DecoratedMethodOwner(hass).decorated,
+            "test.method",
+            id="hass_attribute",
+        ),
+        pytest.param(
+            lambda hass: _DecoratedMethodPrivateOwner(hass).decorated,
+            "test.private_method",
+            id="private_hass_attribute",
+        ),
+    ],
+)
+async def test_verify_event_loop_thread_decorator(
+    hass: HomeAssistant,
+    get_target: Callable[[HomeAssistant], Callable[..., int]],
+    what: str,
+) -> None:
+    """Test the verify_event_loop_thread decorator."""
+    target = get_target(hass)
+    assert target(value=1, extra=2) == 3
+
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(f"Detected code that calls {what} from a thread other than"),
+    ):
+        await hass.async_add_executor_job(functools.partial(target, value=1, extra=2))
 
 
 async def test_async_set_updates_last_reported(hass: HomeAssistant) -> None:
